@@ -67,6 +67,11 @@ func NewFSImporter(res *resources.Resources,
 
 //Run starts importing a given path into a datastore
 func (fs *FSImporter) Run(datastore Datastore) {
+	// build the rita-bl database before parsing
+	if fs.res.Config.S.Blacklisted.Enabled {
+		blacklist.BuildBlacklistedCollections(fs.res)
+	}
+
 	// track the time spent parsing
 	start := time.Now()
 	fs.res.Log.WithFields(
@@ -185,9 +190,6 @@ func indexFiles(files []string, indexingThreads int,
 //a MongoDB datastore object to store the bro data in, and a logger to report
 //errors and parses the bro files line by line into the database.
 func (fs *FSImporter) parseFiles(indexedFiles []*fpt.IndexedFile, parsingThreads int, datastore Datastore, logger *log.Logger) ([]uconnPair, map[string]uconnPair) {
-	if fs.res.Config.S.Blacklisted.Enabled {
-		blacklist.BuildBlacklistedCollections(fs.res)
-	}
 
 	//set up parallel parsing
 	n := len(indexedFiles)
