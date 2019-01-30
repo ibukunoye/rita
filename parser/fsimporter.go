@@ -14,6 +14,7 @@ import (
 
 	"github.com/activecm/rita/config"
 	"github.com/activecm/rita/database"
+	"github.com/activecm/rita/parser/blacklist"
 	"github.com/activecm/rita/parser/conn"
 	fpt "github.com/activecm/rita/parser/fileparsetypes"
 	"github.com/activecm/rita/parser/freq"
@@ -184,6 +185,9 @@ func indexFiles(files []string, indexingThreads int,
 //a MongoDB datastore object to store the bro data in, and a logger to report
 //errors and parses the bro files line by line into the database.
 func (fs *FSImporter) parseFiles(indexedFiles []*fpt.IndexedFile, parsingThreads int, datastore Datastore, logger *log.Logger) ([]uconnPair, map[string]uconnPair) {
+	if fs.res.Config.S.Blacklisted.Enabled {
+		blacklist.BuildBlacklistedCollections(fs.res)
+	}
 
 	//set up parallel parsing
 	n := len(indexedFiles)
@@ -206,6 +210,7 @@ func (fs *FSImporter) parseFiles(indexedFiles []*fpt.IndexedFile, parsingThreads
 			//comb over array
 			for j := start; j < length; j += jump {
 				fmt.Println("\t[-] Parsing " + indexedFiles[j].Path + " -> " + indexedFiles[j].TargetDatabase)
+
 				//read the file
 				fileHandle, err := os.Open(indexedFiles[j].Path)
 				if err != nil {
